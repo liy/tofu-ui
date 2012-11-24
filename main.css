@@ -1,0 +1,25 @@
+.container {
+  margin: auto;
+  width: 300px;
+}
+
+.piece {
+  /*padding: 6px;*/
+
+  -moz-box-shadow: 0 0 5px #888;
+  -webkit-box-shadow: 0 0 5px#888;
+  box-shadow: 0 0 5px #888;
+}
+
+.first {
+  margin-bottom: 0;
+}
+
+.second {
+  margin-top: 0;
+}
+
+
+.slice-point {
+  background-color: #FF0000;
+}

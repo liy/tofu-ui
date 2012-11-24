@@ -19,9 +19,89 @@
 
   function LineRanger(){
     _selection = window.getSelection();
-    _range = document.createRange();
   }
   var p = LineRanger.prototype;
+
+  p.split = function(rootNode, dir){
+    if(!dir)
+      dir = LineRanger.BACKWARD;
+    var range = _selection.getRangeAt(0);
+
+    // keep track of the original selection information.
+    var startContainer = range.startContainer;
+    var endContainer = range.endContainer;
+    var startOffset = range.startOffset;
+    var endOffset = range.endOffset;
+
+    // walk the tree to find the line break point
+    var linebreak = this.walk(dir, range, rootNode);
+
+    if(!linebreak.atFirstLine){
+      // select first part of the paragraph
+      _selection.removeAllRanges();
+      if(this.dir == LineRanger.BACKWARD){
+        _range.setStart(linebreak.rootNode, 0);
+        _range.setEnd(linebreak.textNode, linebreak.offset);
+      }
+      else{
+        _range.setStart(linebreak.textNode, linebreak.offset);
+
+        var lastTextNode = linebreak.rootNode.lastChild;
+        console.log(lastTextNode);
+        while(lastTextNode !== null && lastTextNode.nodeType != 3){
+          lastTextNode = lastTextNode.lastChild;
+          console.log(lastTextNode);
+        }
+        _range.setEnd(lastTextNode, lastTextNode.textContent.length);
+      }
+      _selection.addRange(_range);
+
+      // insert the first part of the paragraph before the original root node.
+      var pElement = document.createElement('p');
+      pElement.setAttribute('class', 'piece');
+      if(linebreak.rootNode.getAttribute('contentEditable') == "true")
+        pElement.setAttribute('contentEditable', "true");
+      var fragment = _range.extractContents();
+      pElement.appendChild(fragment);
+      if(this.dir == LineRanger.BACKWARD)
+        linebreak.rootNode.parentNode.insertBefore(pElement, linebreak.rootNode);
+      else
+        linebreak.rootNode.parentNode.insertBefore(pElement, linebreak.rootNode.nextSibling);
+
+      // reset original selection
+      _selection.removeAllRanges();
+      if(this.dir == LineRanger.BACKWARD){
+        if(startContainer == endContainer){
+          if(startContainer == linebreak.textNode){
+            _range.setStart(startContainer, startOffset-linebreak.offset);
+            _range.setEnd(startContainer, endOffset-linebreak.offset);
+          }
+          else{
+            _range.setStart(startContainer, startOffset);
+            _range.setEnd(endContainer, endOffset);
+          }
+        }
+        else{
+          if(startContainer == linebreak.textNode){
+            _range.setStart(startContainer, startOffset-linebreak.offset);
+            _range.setEnd(endContainer, endOffset);
+          }
+          else{
+            _range.setStart(startContainer, startOffset);
+            _range.setEnd(endContainer, endOffset);
+          }
+        }
+      }
+      else{
+        _range.setStart(startContainer, startOffset);
+        _range.setEnd(endContainer, endOffset);
+      }
+      _selection.addRange(_range);
+    }
+    else{
+      this.resetRange();
+    }
+  };
 
 
   p.walk = function(dir, range, rootNode){

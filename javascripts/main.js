@@ -1,26 +1,28 @@
 $(document).ready(function(){
 
+// clean up the html
+document.body.innerHTML = document.body.innerHTML.replace(/\n|\s\s/g, "");
+
 var _selection = window.getSelection();
 var _range = document.createRange();
 var _ranger = new LineRanger();
 
-var _originalContainerInnerHTML = document.body.firstChild.innerHTML;
+var _splitManager = SplitManager.getInstance();
+_splitManager.init(_ranger);
 
-document.addEventListener('mouseup', function(){
+var paperElement = document.getElementsByClassName('paper')[0];
+paperElement.addEventListener('mouseup', function(){
   if(_selection.type != "Range")
     return;
 
   _range = _selection.getRangeAt(0);
 
-  var paragraphNode = _range.startContainer.parentNode;
-  // find the direct parent paragraph node, if the start node is not paragraph node
-  while(paragraphNode.nodeName.toLowerCase() != 'div'){
-    paragraphNode = paragraphNode.parentNode;
-  }
   // split the selected root node.
-  _ranger.split(paragraphNode, createSplitElement, insert);
+  _splitManager.split(LineRanger.FORWARD, paperElement, createSplitElement, insert);
 
-  setTimeout(close, 1000);
+  setTimeout(function(){
+    _splitManager.close();
+  }, 1000);
 });
 
 function createSplitElement(linebreak){
@@ -37,27 +39,6 @@ function insert(linebreak){
   element.setAttribute('class', 'inserted');
   element.innerHTML = "<p>This is the test</p>";
   return element;
-}
-
-function close(){
-  // var contents = document.getElementsByClassName('content');
-  dps(document.body, 0, function(node){
-    console.log(node);
-  });
-}
-
-function dps(node, index, checkTargetNode){
-  if(!checkTargetNode(node)){
-    var len = node.childNodes.length;
-    for(var i=0; i<len; ++i, ++index){
-      var result = dps(node.childNodes[i], index, checkTargetNode);
-      if(result)
-        return result;
-    }
-  }
-  else{
-    return {node: node, index: index};
-  }
 }
 
 });

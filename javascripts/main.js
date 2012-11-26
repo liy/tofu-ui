@@ -14,7 +14,7 @@ document.addEventListener('mouseup', function(){
 
   var paragraphNode = _range.startContainer.parentNode;
   // find the direct parent paragraph node, if the start node is not paragraph node
-  while(paragraphNode.nodeName.toLowerCase() != 'section'){
+  while(paragraphNode.nodeName.toLowerCase() != 'div'){
     paragraphNode = paragraphNode.parentNode;
   }
   // split the selected root node.
@@ -24,17 +24,17 @@ document.addEventListener('mouseup', function(){
 });
 
 function createSplitElement(linebreak){
-  var element = document.createElement('section');
+  var element = document.createElement('div');
   if(linebreak.rootNode.getAttribute('contentEditable') == "true")
     element.setAttribute('contentEditable', "true");
-  element.setAttribute('class', "content paper");
+  element.setAttribute('class', "paper");
 
   return element;
 }
 
 function insert(linebreak){
   var element = document.createElement('div');
-  element.setAttribute('id', 'inserted');
+  element.setAttribute('class', 'inserted');
   element.innerHTML = "<p>This is the test</p>";
   return element;
 }

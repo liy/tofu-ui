@@ -1,0 +1,60 @@
+body{
+  margin: 0;
+
+  font-family: Georgia, "STHeiti", "Microsoft YaHei", "Times New Roman", Times, serif;
+  font-size: 20px;
+  color: #333;
+
+  height: 100%;
+  /*background-color: #CCC;*/
+}
+
+a{
+  text-decoration: none;
+  color: #A00000;
+}
+
+a:hover{
+  text-decoration: underline;
+}
+
+h1{
+  margin: 0;
+  padding: 1em 0;
+}
+
+footer{
+  font-family: Arial;
+
+  padding-bottom: 1em;
+}
+
+p{
+  margin: 0;
+  line-height: 1.9em;
+  margin-bottom: 1.6em;
+}
+
+::selection {
+  background: rgba(0, 0, 0, 0.1); /* Safari */
+}
+
+::-moz-selection {
+  background: rgba(0, 0, 0, 0.1); /* Firefox */
+}
+
+.paper {
+  -moz-box-shadow: 0 0 15px rgba(204, 204, 204, 0.7);
+  -webkit-box-shadow: 0 0 15px rgba(204, 204, 204, 0.7);
+  box-shadow: 0 0 15px rgba(204, 204, 204, 0.7);
+
+  /*border: 1pt solid rgba(221, 221, 221, 0.7);*/
+  background-color: #FDFDFD;
+
+  padding: 0 1.5em;
+}
+
+.container {
+  margin: 0 auto;
+  width: 680px;
+}

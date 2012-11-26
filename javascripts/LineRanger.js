@@ -22,9 +22,9 @@
   }
   var p = LineRanger.prototype;
 
-  p.split = function(rootNode, dir){
+  p.split = function(rootNode, createSplitElementFunc, insertElementFunc, dir){
     if(!dir)
-      dir = LineRanger.BACKWARD;
+      dir = LineRanger.FORWARD;
     var range = _selection.getRangeAt(0);
 
     // keep track of the original selection information.
@@ -47,26 +47,32 @@
         _range.setStart(linebreak.textNode, linebreak.offset);
 
         var lastTextNode = linebreak.rootNode.lastChild;
-        console.log(lastTextNode);
         while(lastTextNode !== null && lastTextNode.nodeType != 3){
           lastTextNode = lastTextNode.lastChild;
-          console.log(lastTextNode);
         }
         _range.setEnd(lastTextNode, lastTextNode.textContent.length);
       }
       _selection.addRange(_range);
 
       // insert the first part of the paragraph before the original root node.
-      var pElement = document.createElement('p');
-      pElement.setAttribute('class', 'piece');
-      if(linebreak.rootNode.getAttribute('contentEditable') == "true")
-        pElement.setAttribute('contentEditable', "true");
+      var element = createSplitElementFunc(linebreak);
+      var insertElement = null;
+      if(insertElementFunc)
+        insertElement = insertElementFunc(linebreak);
+
       var fragment = _range.extractContents();
-      pElement.appendChild(fragment);
-      if(this.dir == LineRanger.BACKWARD)
-        linebreak.rootNode.parentNode.insertBefore(pElement, linebreak.rootNode);
-      else
-        linebreak.rootNode.parentNode.insertBefore(pElement, linebreak.rootNode.nextSibling);
+
+      element.appendChild(fragment);
+      if(this.dir == LineRanger.BACKWARD){
+        linebreak.rootNode.parentNode.insertBefore(element, linebreak.rootNode);
+        if(insertElement)
+          linebreak.rootNode.parentNode.insertBefore(insertElement, element);
+      }
+      else{
+        linebreak.rootNode.parentNode.insertBefore(element, linebreak.rootNode.nextSibling);
+        if(insertElement)
+          linebreak.rootNode.parentNode.insertBefore(insertElement, linebreak.rootNode.nextSibling);
+      }
 
       // reset original selection
       _selection.removeAllRanges();
@@ -165,8 +171,6 @@
           _range.setStart(currentNode, i);
           _range.setEnd(currentNode, i+1);
           _selection.addRange(_range);
-
-          console.log(_range.getBoundingClientRect().bottom);
 
           if(_range.getBoundingClientRect().bottom != _originalPosition){
             // Notice that we do not revert back to the closest text node.

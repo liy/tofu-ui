@@ -10,20 +10,21 @@ var _ranger = new LineRanger();
 var _splitManager = SplitManager.getInstance();
 _splitManager.init(_ranger);
 
-var paperElement = document.getElementsByClassName('paper')[0];
-paperElement.addEventListener('mouseup', function(){
-  if(_selection.type != "Range")
-    return;
+// document.addEventListener('mouseup', function(e){
+//   console.log(e);
 
-  _range = _selection.getRangeAt(0);
+//   if(_selection.type != "Range")
+//     return;
 
-  // split the selected root node.
-  _splitManager.split(LineRanger.FORWARD, paperElement, createSplitElement, insert);
+//   _range = _selection.getRangeAt(0);
 
-  setTimeout(function(){
-    _splitManager.close();
-  }, 1000);
-});
+//   // split the selected root node.
+//   _splitManager.split(LineRanger.FORWARD, paperElement, createSplitElement, insert);
+
+//   setTimeout(function(){
+//     _splitManager.close();
+//   }, 1000);
+// });
 
 function createSplitElement(linebreak){
   var element = document.createElement('div');

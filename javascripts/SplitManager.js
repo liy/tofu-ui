@@ -158,6 +158,7 @@
     if(!isSplitable)
       return;
 
+    // testing
     splitParagraph(paragraphNode);
   }
 
@@ -174,6 +175,10 @@
     // walk the tree to find the line break point
     var linebreak = lineRanger.find(LineRanger.FORWARD, range, targetParagraphNode);
 
+    // set the split id
+    var id = (new Date()).getTime() + "-" + Math.floor(Math.random()*10000);
+    targetParagraphNode.setAttribute("data-split-id", id);
+
     // create the splitable paper node to contains all the p nodes after target p node.
     var newContainer = document.createElement('div');
     if(linebreak.rootNode.getAttribute('contentEditable') == "true")
@@ -183,6 +188,7 @@
 
     var currentNode;
     var nextSibling;
+    var newParagraphNode;
 
     if(!linebreak.atFirstLine){
       // select first part of the paragraph
@@ -200,7 +206,8 @@
       var fragment = range.extractContents();
 
       // create new paragraph node to wrap the extracted content.
-      var newParagraphNode = document.createElement('p');
+      newParagraphNode = document.createElement('p');
+      newParagraphNode.setAttribute("data-split-id", id);
       newParagraphNode.appendChild(fragment);
       newContainer.appendChild(newParagraphNode);
 
@@ -235,6 +242,15 @@
 
       lineRanger.resetRange();
     }
+
+    setTimeout(function(){
+      targetParagraphNode.innerHTML += newContainer.firstChild.innerHTML;
+      newContainer.removeChild(newContainer.firstChild);
+      while(newContainer.childNodes.length > 0){
+        targetParagraphNode.parentNode.appendChild(newContainer.firstChild);
+      }
+      _articleContent.removeChild(newContainer);
+    }, 2000);
   }
 
   window.SplitManager = SplitManager;

@@ -138,17 +138,31 @@
 
     // search back to its parents to find out whether the selection
     // could trigger split action.
-    var node = e.target;
+    var range = _selection.getRangeAt(0);
+    var node = range.startContainer;
+
+    setTimeout(function(){
+      document.body.appendChild(node.parentNode);
+    }, 2000);
+
+    return;
+
     var isSplitable = false;
     var paragraphNode = null;
-    while(node != _articleContent && node.tagName.toLowerCase() != "article"){
-      if(node.tagName.toLowerCase() == "p"){
-        paragraphNode = node;
-      }
+    while(true){
+      if(node.nodeType != 3){
 
-      if(node.getAttribute("data-splitable") === "true"){
-        isSplitable = true;
-        break;
+        if(node == _articleContent)
+          break;
+
+        if(node.nodeName.toLowerCase() == "p"){
+          paragraphNode = node;
+        }
+
+        if(node.getAttribute("data-splitable") === "true"){
+          isSplitable = true;
+          break;
+        }
       }
 
       node = node.parentNode;
@@ -194,12 +208,7 @@
       // select first part of the paragraph
       _selection.removeAllRanges();
       range.setStart(linebreak.textNode, linebreak.offset);
-      // find the last text node of the paragraph.
-      var lastTextNode = targetParagraphNode.lastChild;
-      while(lastTextNode !== null && lastTextNode.nodeType != 3){
-        lastTextNode = lastTextNode.lastChild;
-      }
-      range.setEnd(lastTextNode, lastTextNode.textContent.length);
+      range.setEnd(targetParagraphNode, targetParagraphNode.childNodes.length);
       _selection.addRange(range);
 
       // extract the part of the the target paragraph node.
@@ -250,7 +259,7 @@
         targetParagraphNode.parentNode.appendChild(newContainer.firstChild);
       }
       _articleContent.removeChild(newContainer);
-    }, 2000);
+    }, 200000);
   }
 
   window.SplitManager = SplitManager;

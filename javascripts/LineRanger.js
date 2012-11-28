@@ -100,7 +100,7 @@
               textNode: currentNode,
               offset: i,
               rootNode: _rootNode,
-              atFirstLine: false};
+              atEndLine: false};
           }
         }
 
@@ -123,7 +123,7 @@
           textNode: closestTextNode,
           offset: closestTextNode.textContent.length,
           rootNode: _rootNode,
-          atFirstLine: true};
+          atEndLine: true};
       }
     }
   }
@@ -166,14 +166,14 @@
                 textNode: closestTextNode,
                 offset: 0,
                 rootNode: _rootNode,
-                atFirstLine: false
+                atEndLine: false
               };
             else
               return {
                 textNode: currentNode,
                 offset: i+1,
                 rootNode: _rootNode,
-                atFirstLine: false
+                atEndLine: false
               };
           }
         }
@@ -202,7 +202,7 @@
           textNode: closestTextNode,
           offset: 0,
           rootNode: _rootNode,
-          atFirstLine: true
+          atEndLine: true
         };
       }
     } // node has no child.

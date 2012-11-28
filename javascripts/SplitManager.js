@@ -2,6 +2,8 @@
 
   var _selection;
   var _articleContent;
+  var _insertedNodes = [];
+  var _closingNodes = [];
 
   function SplitManager(){
 
@@ -37,7 +39,7 @@
     // walk the tree to find the line break point
     var linebreak = this.lineRanger.find(dir, range, rootNode);
 
-    if(!linebreak.atFirstLine){
+    if(!linebreak.atEndLine){
       // select first part of the paragraph
       _selection.removeAllRanges();
       if(this.lineRanger.dir == LineRanger.BACKWARD){
@@ -133,47 +135,26 @@
   }
 
   function mouseUpHandler(e){
+    // do not split the paragraph if nothing is selected.
     if(_selection.isCollapsed)
       return;
 
-    // search back to its parents to find out whether the selection
-    // could trigger split action.
     var range = _selection.getRangeAt(0);
+
+    // find the paragraph node
     var node = range.startContainer;
-
-    setTimeout(function(){
-      document.body.appendChild(node.parentNode);
-    }, 2000);
-
-    return;
-
-    var isSplitable = false;
-    var paragraphNode = null;
-    while(true){
-      if(node.nodeType != 3){
-
-        if(node == _articleContent)
-          break;
-
-        if(node.nodeName.toLowerCase() == "p"){
-          paragraphNode = node;
-        }
-
-        if(node.getAttribute("data-splitable") === "true"){
-          isSplitable = true;
-          break;
-        }
-      }
-
-      node = node.parentNode;
+    while((node = node.parentNode) !== null){
+      if(node.nodeName.toLowerCase() == "p")
+        break;
     }
 
-    // perform split only when splitable node is valid
-    if(!isSplitable)
+    // if the paragraph's node is not splitable, do nothing. Since
+    // we do not want to split the node other than article content.
+    if(node.parentNode.getAttribute("data-splitable") != "true")
       return;
 
-    // testing
-    splitParagraph(paragraphNode);
+    // split the paragraph node.
+    splitParagraph(node);
   }
 
   function splitParagraph(targetParagraphNode){
@@ -189,77 +170,101 @@
     // walk the tree to find the line break point
     var linebreak = lineRanger.find(LineRanger.FORWARD, range, targetParagraphNode);
 
-    // set the split id
-    var id = (new Date()).getTime() + "-" + Math.floor(Math.random()*10000);
-    targetParagraphNode.setAttribute("data-split-id", id);
-
-    // create the splitable paper node to contains all the p nodes after target p node.
-    var newContainer = document.createElement('div');
-    if(linebreak.rootNode.getAttribute('contentEditable') == "true")
-      newContainer.setAttribute('contentEditable', "true");
-    newContainer.setAttribute('class', "paper");
-    newContainer.setAttribute('data-splitable', "true");
-
-    var currentNode;
-    var nextSibling;
-    var newParagraphNode;
-
-    if(!linebreak.atFirstLine){
-      // select first part of the paragraph
-      _selection.removeAllRanges();
-      range.setStart(linebreak.textNode, linebreak.offset);
-      range.setEnd(targetParagraphNode, targetParagraphNode.childNodes.length);
-      _selection.addRange(range);
-
-      // extract the part of the the target paragraph node.
-      var fragment = range.extractContents();
-
-      // create new paragraph node to wrap the extracted content.
-      newParagraphNode = document.createElement('p');
-      newParagraphNode.setAttribute("data-split-id", id);
-      newParagraphNode.appendChild(fragment);
-      newContainer.appendChild(newParagraphNode);
-
-      // find all the next sibling paragraph nodes
-      currentNode = targetParagraphNode.nextSibling;
-      while(currentNode){
-        nextSibling = currentNode.nextSibling;
-        newContainer.appendChild(currentNode);
-        currentNode = nextSibling;
-      }
-
-      // insert the new container node after the parent of target paragraph node.
-      _articleContent.insertBefore(newContainer, targetParagraphNode.parentNode.nextSibling);
-
-      // reset to original selection
-      _selection.removeAllRanges();
-      range.setStart(startContainer, startOffset);
-      range.setEnd(endContainer, endOffset);
-      _selection.addRange(range);
+    // if the paragraph node has no id, one must be assigned, since we need to
+    // decide of which splited nodes should be merged together when do merging.
+    var id = targetParagraphNode.getAttribute("data-paragraph-id");
+    if(id === null){
+      id = (new Date()).getTime() + "-" + Math.floor(Math.random()*10000);
+      targetParagraphNode.setAttribute("data-paragraph-id", id);
     }
-    else{
-      // find all the next sibling paragraph nodes
-      currentNode = targetParagraphNode.nextSibling;
-      while(currentNode){
-        nextSibling = currentNode.nextSibling;
-        newContainer.appendChild(currentNode);
-        currentNode = nextSibling;
-      }
 
-       // insert the new container node after the parent of target paragraph node.
-      _articleContent.insertBefore(newContainer, targetParagraphNode.parentNode.nextSibling);
-
+    // if the target paragraph node is the last node of the current paper node, and its parent node next sibling
+    // node is a inserted node.
+    // Just update the existing inserted with the new content.
+    var insertedNode = targetParagraphNode.parentNode.nextSibling;
+    if(linebreak.atEndLine && targetParagraphNode.nextSibling === null  && insertedNode.getAttribute("class") == "inserted"){
+      console.log("already inserted");
       lineRanger.resetRange();
+      return;
+    }
+    // no inserted node, insert one!
+    else{
+      // create the splitable paper node. It will be containing the splited node and the paragraph nodes
+      // after targetParagraphNode.
+      var paperNode = document.createElement('div');
+      if(linebreak.rootNode.getAttribute('contentEditable') == "true")
+        paperNode.setAttribute('contentEditable', "true");
+      paperNode.setAttribute('class', "paper");
+      paperNode.setAttribute('data-splitable', "true");
+
+      // append all nodes after target paragraph node into newly create paper node
+      var currentNode = targetParagraphNode.nextSibling;
+      while(currentNode){
+        var nextSibling = currentNode.nextSibling;
+        paperNode.appendChild(currentNode);
+        currentNode = nextSibling;
+      }
+
+      var splitedNode;
+
+      if(!linebreak.atEndLine){
+        // select the tail part of the targetParagraphNode, from the line break point.
+        _selection.removeAllRanges();
+        range.setStart(linebreak.textNode, linebreak.offset);
+        range.setEnd(targetParagraphNode, targetParagraphNode.childNodes.length);
+        _selection.addRange(range);
+
+        // extract the html fragement so we can put into the newly create paperNode.
+        var fragment = range.extractContents();
+
+        // create new paragraph node to wrap the extracted content.
+        splitedNode = document.createElement('p');
+        splitedNode.setAttribute("data-paragraph-id", id);
+        splitedNode.appendChild(fragment);
+        // add the splited paragraph node into the newly create paper node.
+        paperNode.insertBefore(splitedNode, paperNode.firstChild);
+
+        // insert the new container node after the parent of target paragraph node.
+        _articleContent.insertBefore(paperNode, targetParagraphNode.parentNode.nextSibling);
+
+        // reset to original selection
+        _selection.removeAllRanges();
+        range.setStart(startContainer, startOffset);
+        range.setEnd(endContainer, endOffset);
+        _selection.addRange(range);
+      }
+      else{
+         // insert the new container node after the parent of target paragraph node.
+        _articleContent.insertBefore(paperNode, targetParagraphNode.parentNode.nextSibling);
+
+        lineRanger.resetRange();
+      }
+
+      // insert the inserted node
+      insertedNode = document.createElement('div');
+      insertedNode.setAttribute('class', 'inserted');
+      insertedNode.innerHTML = "<h1>Inserted!!</h1>";
+      _articleContent.insertBefore(insertedNode, targetParagraphNode.parentNode.nextSibling);
     }
 
+    //test close the node in 2 seconds
     setTimeout(function(){
-      targetParagraphNode.innerHTML += newContainer.firstChild.innerHTML;
-      newContainer.removeChild(newContainer.firstChild);
-      while(newContainer.childNodes.length > 0){
-        targetParagraphNode.parentNode.appendChild(newContainer.firstChild);
+      var formerParagraphNode = insertedNode.previousSibling.lastChild;
+      var latterPagagraphNode = insertedNode.nextSibling.firstChild;
+      if(formerParagraphNode.getAttribute("data-paragraph-id") == latterPagagraphNode.getAttribute("data-paragraph-id")){
+        // merge two paragraph node
+        for(var i=0; i<latterPagagraphNode.childNodes.length; ++i){
+          formerParagraphNode.appendChild(latterPagagraphNode.childNodes[i]);
+        }
+
+        for(var j=1; j<insertedNode.nextSibling.childNodes.length; ++j){
+          formerParagraphNode.parentNode.appendChild(insertedNode.nextSibling.childNodes[j]);
+        }
+
+        _articleContent.removeChild(insertedNode.nextSibling);
+        _articleContent.removeChild(insertedNode);
       }
-      _articleContent.removeChild(newContainer);
-    }, 200000);
+    }, 2000);
   }
 
   window.SplitManager = SplitManager;

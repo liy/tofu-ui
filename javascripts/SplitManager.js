@@ -193,27 +193,35 @@
     insertedNode.style.height = "0px";
     insertedNode.style.opacity = 0;
     var tl = new TimelineLite();
-    tl.to(insertedNode, 0.2, {css:{height: insertedHeight, autoAlpha:1}, ease:Quad.easeOut});
-    tl.to(insertedNode, 0.2, {css:{autoAlpha: 1}, ease:Quad.easeOut});
+    tl.to(insertedNode, 0.15, {css:{height: insertedHeight, autoAlpha:1}, ease:Quad.easeOut});
+    tl.to(insertedNode, 0.1, {css:{autoAlpha: 1}, ease:Quad.easeOut});
 
     // keep track of the merge actions
     _closeFuncs.push(function(){
       var tl = new TimelineLite({onComplete:SplitManager.instance.merge, onCompleteParams:[insertedNode]});
 
       tl.to(insertedNode, 0.1, {css:{autoAlpha:0}});
-      tl.to(insertedNode, 0.1, {css:{marginTop: "0em", marginBottom: "0em", height: 0}, ease:Quad.easeOut});
-      var formerParagraphNode = insertedNode.previousSibling.lastChild;
-      if(insertedNode.nextSibling){
-        var latterPagagraphNode = insertedNode.nextSibling.firstChild;
-        if(formerParagraphNode.getAttribute("data-paragraph-id") == latterPagagraphNode.getAttribute("data-paragraph-id")){
-          tl.to(formerParagraphNode, 0.1, {css:{marginBottom: "0em"}, onComplete:function(){ formerParagraphNode.style.marginBottom = "1.6em"; }});
-        }
-      }
+      tl.to(insertedNode, 0.15, {css:{marginTop: "0em", marginBottom: "0em", height: 0}, ease:Quad.easeOut});
+
+      // var formerParagraphNode = insertedNode.previousSibling.lastChild;
+      // if(insertedNode.nextSibling){
+      //   var latterPagagraphNode = insertedNode.nextSibling.firstChild;
+      //   if(formerParagraphNode.getAttribute("data-paragraph-id") == latterPagagraphNode.getAttribute("data-paragraph-id")){
+      //     tl.to(formerParagraphNode, 0.1, {css:{marginBottom: "0em"}, onComplete:function(){ formerParagraphNode.style.marginBottom = "1.6em"; }});
+      //   }
+      // }
 
     });
   }
 
   p.merge = function(insertedNode){
+    var range = _selection.getRangeAt(0);
+    // keep track of the original selection information.
+    var startContainer = range.startContainer;
+    var endContainer = range.endContainer;
+    var startOffset = range.startOffset;
+    var endOffset = range.endOffset;
+
     var formerParagraphNode = insertedNode.previousSibling.lastChild;
     if(insertedNode.nextSibling){
       var latterPagagraphNode = insertedNode.nextSibling.firstChild;
@@ -240,6 +248,13 @@
     }
 
     _articleContent.removeChild(insertedNode);
+
+
+        // reset to original selection
+        _selection.removeAllRanges();
+        range.setStart(startContainer, startOffset);
+        range.setEnd(endContainer, endOffset);
+        _selection.addRange(range);
   };
 
   window.SplitManager = SplitManager;

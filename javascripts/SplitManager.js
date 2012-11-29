@@ -2,6 +2,8 @@
 
   var _selection;
   var _articleContent;
+  var _splitTimeoutID = 0;
+  var _delaySplit = 300;
 
   var _closeFuncs = [];
 
@@ -25,61 +27,49 @@
 
     _articleContent = document.getElementById("article-content");
     _articleContent.addEventListener("mouseup", mouseUpHandler);
-  };
-
-  p.close = function(){
-    // var contents = document.getElementsByClassName('content');
-    dps(document.body, 0, function(node){
-      console.dir(node);
-      console.log(node.nodeType);
+    document.addEventListener("mousedown", function(){
+      clearTimeout(_splitTimeoutID);
     });
   };
 
-  function dps(node, index, checkTargetNode){
-    if(!checkTargetNode(node)){
-      var len = node.childNodes.length;
-      for(var i=0; i<len; ++i, ++index){
-        var result = dps(node.childNodes[i], index, checkTargetNode);
-        if(result)
-          return result;
-      }
-    }
-    else{
-      return {node: node, index: index};
-    }
-  }
-
-  function mouseUpHandler(e){
+  p.close = function(){
     // close all other splited nodes
     while(_closeFuncs.length !== 0){
       _closeFuncs.pop()();
     }
+  };
+
+  function mouseUpHandler(e){
+    clearTimeout(_splitTimeoutID);
 
     // do not split the paragraph if nothing is selected.
     if(_selection.isCollapsed){
+      SplitManager.instance.close();
       return;
     }
 
     var range = _selection.getRangeAt(0);
 
     // find the paragraph node
-    var node = range.startContainer;
-    while((node = node.parentNode) !== null){
-      if(node.nodeName.toLowerCase() == "p")
+    var paragraphNode = range.startContainer;
+    while((paragraphNode = paragraphNode.parentNode) !== null){
+      console.log(paragraphNode);
+      if(paragraphNode.nodeName.toLowerCase() == "p")
         break;
     }
 
     // if the paragraph's node is not splitable, do nothing. Since
     // we do not want to split the node other than article content.
-    if(node.parentNode.getAttribute("data-splitable") != "true")
+    if(paragraphNode.parentNode.getAttribute("data-splitable") != "true")
       return;
 
-    // split the paragraph node.
-    splitParagraph(node);
-  }
+    // before split, close splited nodes.
+    SplitManager.instance.close();
 
-  function redrawNode(node){
-    node.style.webkitTransform = 'scale(1)';
+    _splitTimeoutID = setTimeout(function(){
+      // split the paragraph node.
+      splitParagraph(paragraphNode);
+    }, _delaySplit);
   }
 
   function splitParagraph(targetParagraphNode){
@@ -199,18 +189,8 @@
     // keep track of the merge actions
     _closeFuncs.push(function(){
       var tl = new TimelineLite({onComplete:SplitManager.instance.merge, onCompleteParams:[insertedNode]});
-
       tl.to(insertedNode, 0.1, {css:{autoAlpha:0}});
       tl.to(insertedNode, 0.15, {css:{marginTop: "0em", marginBottom: "0em", height: 0}, ease:Quad.easeOut});
-
-      // var formerParagraphNode = insertedNode.previousSibling.lastChild;
-      // if(insertedNode.nextSibling){
-      //   var latterPagagraphNode = insertedNode.nextSibling.firstChild;
-      //   if(formerParagraphNode.getAttribute("data-paragraph-id") == latterPagagraphNode.getAttribute("data-paragraph-id")){
-      //     tl.to(formerParagraphNode, 0.1, {css:{marginBottom: "0em"}, onComplete:function(){ formerParagraphNode.style.marginBottom = "1.6em"; }});
-      //   }
-      // }
-
     });
   }
 

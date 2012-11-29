@@ -2,8 +2,8 @@
 
   var _selection;
   var _articleContent;
-  var _insertedNodes = [];
-  var _closingNodes = [];
+
+  var _closeFuncs = [];
 
   function SplitManager(){
 
@@ -50,9 +50,15 @@
   }
 
   function mouseUpHandler(e){
+    // close all other splited nodes
+    while(_closeFuncs.length !== 0){
+      _closeFuncs.pop()();
+    }
+
     // do not split the paragraph if nothing is selected.
-    if(_selection.isCollapsed)
+    if(_selection.isCollapsed){
       return;
+    }
 
     var range = _selection.getRangeAt(0);
 
@@ -105,8 +111,6 @@
       if(insertedNode && insertedNode.getAttribute("class") == "inserted"){
         console.log("already inserted, replace the inserted node");
         lineRanger.resetRange();
-
-        _insertedNodes.push(insertedNode);
 
         return;
       }
@@ -181,40 +185,62 @@
     // insert the inserted node
     insertedNode = document.createElement('div');
     insertedNode.setAttribute('class', 'inserted');
-    insertedNode.innerHTML = "<h1>Inserted!!</h1>";
+    insertedNode.innerHTML = '<h1><ruby>汉<rt>hàn</rt>字<rt>zì</rt></ruby></h1><p>The idea with collections was that they gave people a context into which to publish their ideas. Optionally, the context could be shared, so that lots of people could contribute. But how do you decide what one collection your idea should be in—and how do you decide exactly the right way to frame the context?</p><p>根据以英语作为母语的人数计算，英语是世界上最广泛的第二语言，也是欧盟，诸多国际组织和很多英联邦国家的官方语言之一。但仅拥有世界第三位的母语使用者，少于汉语和西班牙语[1]。上两个世纪英国和美国在文化、经济、军事、政治和科学上的领先地位使得英语成为一种国际语言。英语也是与计算机联系最密切的语言，大多数编程语言都与英语有联系，而且随着互联网的使用，使英文的使用更普及。英语是联合国的工作语言之一。</p>';
     _articleContent.insertBefore(insertedNode, targetParagraphNode.parentNode.nextSibling);
-    _insertedNodes.push(insertedNode);
 
+    // test aniamtion
+    var insertedHeight = insertedNode.offsetHeight;
+    insertedNode.style.height = "0px";
+    insertedNode.style.opacity = 0;
+    var tl = new TimelineLite();
+    tl.to(insertedNode, 0.2, {css:{height: insertedHeight, autoAlpha:1}, ease:Quad.easeOut});
+    tl.to(insertedNode, 0.2, {css:{autoAlpha: 1}, ease:Quad.easeOut});
 
-    // //test close the node in 2 seconds
-    setTimeout(function(){
+    // keep track of the merge actions
+    _closeFuncs.push(function(){
+      var tl = new TimelineLite({onComplete:SplitManager.instance.merge, onCompleteParams:[insertedNode]});
+
+      tl.to(insertedNode, 0.1, {css:{autoAlpha:0}});
+      tl.to(insertedNode, 0.1, {css:{marginTop: "0em", marginBottom: "0em", height: 0}, ease:Quad.easeOut});
       var formerParagraphNode = insertedNode.previousSibling.lastChild;
-      var latterPagagraphNode = insertedNode.nextSibling.firstChild;
-      if(latterPagagraphNode){
-        // Merge the splited original paragraph node if they exist.
+      if(insertedNode.nextSibling){
+        var latterPagagraphNode = insertedNode.nextSibling.firstChild;
         if(formerParagraphNode.getAttribute("data-paragraph-id") == latterPagagraphNode.getAttribute("data-paragraph-id")){
-          // merge the two paragraph
-          while(latterPagagraphNode.childNodes.length !== 0){
-            formerParagraphNode.appendChild(latterPagagraphNode.firstChild);
-          }
-          // remove the latter paragraph node from its container.
-          latterPagagraphNode.parentNode.removeChild(latterPagagraphNode);
-
-          // normalize the merged node, remove adjacent text nodes and emtpy node(empty node should not happen)
-          formerParagraphNode.normalize();
+          tl.to(formerParagraphNode, 0.1, {css:{marginBottom: "0em"}, onComplete:function(){ formerParagraphNode.style.marginBottom = "1.6em"; }});
         }
-
-        // append the following paragraph node in the next sibling node of inserted node.
-        while(insertedNode.nextSibling.childNodes.length !== 0){
-          insertedNode.previousSibling.appendChild(insertedNode.nextSibling.firstChild);
-        }
-
-        // remove the inserted node and the splited node
-        _articleContent.removeChild(insertedNode.nextSibling);
-        _articleContent.removeChild(insertedNode);
       }
-    }, 2000);
+
+    });
   }
+
+  p.merge = function(insertedNode){
+    var formerParagraphNode = insertedNode.previousSibling.lastChild;
+    if(insertedNode.nextSibling){
+      var latterPagagraphNode = insertedNode.nextSibling.firstChild;
+      // Merge the splited original paragraph node if they exist.
+      if(formerParagraphNode.getAttribute("data-paragraph-id") == latterPagagraphNode.getAttribute("data-paragraph-id")){
+        // merge the two paragraph
+        while(latterPagagraphNode.childNodes.length !== 0){
+          formerParagraphNode.appendChild(latterPagagraphNode.firstChild);
+        }
+        // remove the latter paragraph node from its container.
+        latterPagagraphNode.parentNode.removeChild(latterPagagraphNode);
+
+        // normalize the merged node, remove adjacent text nodes and emtpy node(empty node should not happen)
+        formerParagraphNode.normalize();
+      }
+
+      // append the following paragraph node in the next sibling node of inserted node.
+      while(insertedNode.nextSibling.childNodes.length !== 0){
+        insertedNode.previousSibling.appendChild(insertedNode.nextSibling.firstChild);
+      }
+
+      // remove the inserted node and the splited node
+      _articleContent.removeChild(insertedNode.nextSibling);
+    }
+
+    _articleContent.removeChild(insertedNode);
+  };
 
   window.SplitManager = SplitManager;
 }(window));

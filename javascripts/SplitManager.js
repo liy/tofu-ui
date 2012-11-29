@@ -27,91 +27,6 @@
     _articleContent.addEventListener("mouseup", mouseUpHandler);
   };
 
-  p.split = function(dir, rootNode, createSplitElementFunc, insertElementFunc){
-    var range = _selection.getRangeAt(0);
-
-    // keep track of the original selection information.
-    var startContainer = range.startContainer;
-    var endContainer = range.endContainer;
-    var startOffset = range.startOffset;
-    var endOffset = range.endOffset;
-
-    // walk the tree to find the line break point
-    var linebreak = this.lineRanger.find(dir, range, rootNode);
-
-    if(!linebreak.atEndLine){
-      // select first part of the paragraph
-      _selection.removeAllRanges();
-      if(this.lineRanger.dir == LineRanger.BACKWARD){
-        range.setStart(linebreak.rootNode, 0);
-        range.setEnd(linebreak.textNode, linebreak.offset);
-      }
-      else{
-        range.setStart(linebreak.textNode, linebreak.offset);
-
-        var lastTextNode = linebreak.rootNode.lastChild;
-        while(lastTextNode !== null && lastTextNode.nodeType != 3){
-          lastTextNode = lastTextNode.lastChild;
-        }
-        range.setEnd(lastTextNode, lastTextNode.textContent.length);
-      }
-      _selection.addRange(range);
-
-      // insert the first part of the paragraph before the original root node.
-      var element = createSplitElementFunc(linebreak);
-      var insertElement = null;
-      if(insertElementFunc)
-        insertElement = insertElementFunc(linebreak);
-
-      var fragment = range.extractContents();
-
-      element.appendChild(fragment);
-      if(this.lineRanger.dir == LineRanger.BACKWARD){
-        linebreak.rootNode.parentNode.insertBefore(element, linebreak.rootNode);
-        if(insertElement)
-          linebreak.rootNode.parentNode.insertBefore(insertElement, element);
-      }
-      else{
-        linebreak.rootNode.parentNode.insertBefore(element, linebreak.rootNode.nextSibling);
-        if(insertElement)
-          linebreak.rootNode.parentNode.insertBefore(insertElement, linebreak.rootNode.nextSibling);
-      }
-
-      // reset original selection
-      _selection.removeAllRanges();
-      if(this.lineRanger.dir == LineRanger.BACKWARD){
-        if(startContainer == endContainer){
-          if(startContainer == linebreak.textNode){
-            range.setStart(startContainer, startOffset-linebreak.offset);
-            range.setEnd(startContainer, endOffset-linebreak.offset);
-          }
-          else{
-            range.setStart(startContainer, startOffset);
-            range.setEnd(endContainer, endOffset);
-          }
-        }
-        else{
-          if(startContainer == linebreak.textNode){
-            range.setStart(startContainer, startOffset-linebreak.offset);
-            range.setEnd(endContainer, endOffset);
-          }
-          else{
-            range.setStart(startContainer, startOffset);
-            range.setEnd(endContainer, endOffset);
-          }
-        }
-      }
-      else{
-        range.setStart(startContainer, startOffset);
-        range.setEnd(endContainer, endOffset);
-      }
-      _selection.addRange(range);
-    }
-    else{
-      this.lineRanger.resetRange();
-    }
-  };
-
   p.close = function(){
     // var contents = document.getElementsByClassName('content');
     dps(document.body, 0, function(node){
@@ -157,6 +72,10 @@
     splitParagraph(node);
   }
 
+  function redrawNode(node){
+    node.style.webkitTransform = 'scale(1)';
+  }
+
   function splitParagraph(targetParagraphNode){
     var range = _selection.getRangeAt(0);
     var lineRanger = SplitManager.instance.lineRanger;
@@ -182,13 +101,28 @@
     // node is a inserted node.
     // Just update the existing inserted with the new content.
     var insertedNode = targetParagraphNode.parentNode.nextSibling;
-    if(linebreak.atEndLine && targetParagraphNode.nextSibling === null  && insertedNode.getAttribute("class") == "inserted"){
-      console.log("already inserted");
+    if(linebreak.atEndLine && targetParagraphNode.nextSibling === null){
+      if(insertedNode && insertedNode.getAttribute("class") == "inserted"){
+        console.log("already inserted, replace the inserted node");
+        lineRanger.resetRange();
+
+        _insertedNodes.push(insertedNode);
+
+        return;
+      }
+      // else you are at the end of the whole paper nodes, just insert a inserted node
       lineRanger.resetRange();
-      return;
     }
-    // no inserted node, insert one!
     else{
+      // Just set a dummy css style height which ensures article element does not
+      // auto pack(shrink) the content when the child nodes are removed.
+      // In other word, this prevents scroll thumb jumping when node is removed because of the
+      // viewport reaches the end of the html.
+      // The css height will be set to empty string at the end of this function.
+      //
+      // Note there is no need to apply this operation when no nodes are removed during the splitting.
+      _articleContent.style.height = (_articleContent.offsetHeight + 200)+"px";
+
       // create the splitable paper node. It will be containing the splited node and the paragraph nodes
       // after targetParagraphNode.
       var paperNode = document.createElement('div');
@@ -206,7 +140,6 @@
       }
 
       var splitedNode;
-
       if(!linebreak.atEndLine){
         // select the tail part of the targetParagraphNode, from the line break point.
         _selection.removeAllRanges();
@@ -240,27 +173,43 @@
         lineRanger.resetRange();
       }
 
-      // insert the inserted node
-      insertedNode = document.createElement('div');
-      insertedNode.setAttribute('class', 'inserted');
-      insertedNode.innerHTML = "<h1>Inserted!!</h1>";
-      _articleContent.insertBefore(insertedNode, targetParagraphNode.parentNode.nextSibling);
-    }
+      // reset the article element height to default empty string so it can auto wrap the child nodes.
+      _articleContent.style.height = "";
+    }// inserted node check
 
-    //test close the node in 2 seconds
+
+    // insert the inserted node
+    insertedNode = document.createElement('div');
+    insertedNode.setAttribute('class', 'inserted');
+    insertedNode.innerHTML = "<h1>Inserted!!</h1>";
+    _articleContent.insertBefore(insertedNode, targetParagraphNode.parentNode.nextSibling);
+    _insertedNodes.push(insertedNode);
+
+
+    // //test close the node in 2 seconds
     setTimeout(function(){
       var formerParagraphNode = insertedNode.previousSibling.lastChild;
       var latterPagagraphNode = insertedNode.nextSibling.firstChild;
-      if(formerParagraphNode.getAttribute("data-paragraph-id") == latterPagagraphNode.getAttribute("data-paragraph-id")){
-        // merge two paragraph node
-        for(var i=0; i<latterPagagraphNode.childNodes.length; ++i){
-          formerParagraphNode.appendChild(latterPagagraphNode.childNodes[i]);
+      if(latterPagagraphNode){
+        // Merge the splited original paragraph node if they exist.
+        if(formerParagraphNode.getAttribute("data-paragraph-id") == latterPagagraphNode.getAttribute("data-paragraph-id")){
+          // merge the two paragraph
+          while(latterPagagraphNode.childNodes.length !== 0){
+            formerParagraphNode.appendChild(latterPagagraphNode.firstChild);
+          }
+          // remove the latter paragraph node from its container.
+          latterPagagraphNode.parentNode.removeChild(latterPagagraphNode);
+
+          // normalize the merged node, remove adjacent text nodes and emtpy node(empty node should not happen)
+          formerParagraphNode.normalize();
         }
 
-        for(var j=1; j<insertedNode.nextSibling.childNodes.length; ++j){
-          formerParagraphNode.parentNode.appendChild(insertedNode.nextSibling.childNodes[j]);
+        // append the following paragraph node in the next sibling node of inserted node.
+        while(insertedNode.nextSibling.childNodes.length !== 0){
+          insertedNode.previousSibling.appendChild(insertedNode.nextSibling.firstChild);
         }
 
+        // remove the inserted node and the splited node
         _articleContent.removeChild(insertedNode.nextSibling);
         _articleContent.removeChild(insertedNode);
       }

@@ -1,4 +1,5 @@
-$(document).ready(function(){
+// $(document).ready(function(){
+window.onload = function(){
 
 // clean up the html
 document.body.innerHTML = document.body.innerHTML.replace(/\n|\s\s/g, "");
@@ -42,4 +43,5 @@ function insert(linebreak){
   return element;
 }
 
-});
+};
+// });

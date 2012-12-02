@@ -13,7 +13,7 @@
   var _articleContent;
 
   var _splitTimeoutID = 0;
-  var _delaySplit = 500;
+  var _delaySplit = 0;
 
   var _animateCloseFunc = null;
 

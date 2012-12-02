@@ -53,24 +53,16 @@
       _animateInsertFunc(content);
   };
 
-  function isDeselect(node){
-    // if nothing selected
-    if(_selection.isCollapsed){
-      // if the user is clicking the inserted node, then this is not the deselect node.
-      // This allows user to make selection of the inserted node content.
-      var insertedNodes = document.getElementsByClassName('inserted');
-      for(var i=0; i<insertedNodes.length; ++i){
-        if(insertedNodes[i].contains(node))
-          return false;
-      }
-      return true;
-    }
-    return false;
-  }
-
   function mouseUpHandler(e){
-    // only when user is click paper node, close the existing inserted node.
-    if(isDeselect(e.target)){
+    // if the click target is inserted node, do nothing.
+    var insertedNodes = document.getElementsByClassName("inserted");
+    for(var i=0; i<insertedNodes.length; ++i){
+      if(insertedNodes[i].contains(e.target))
+        return;
+    }
+
+    // if click target is NOT inserted node, and selection is empty. Close the split nodes.
+    if(_selection.isCollapsed){
       close();
       return;
     }
@@ -82,7 +74,7 @@
   }
 
   function close(delaySplitFunc){
-    // console.log("close");
+    console.log("close");
     if(_animateCloseFunc){
       _animateCloseFunc(delaySplitFunc);
       _animateCloseFunc = null;
@@ -93,15 +85,14 @@
   }
 
   function split(){
-    console.log("split: ");
-
+    // console.log("split: ");
     // TODO: if no selection, do nothing.
     if(_selection.rangeCount === 0)
       return;
 
     // find the split target node
     var range = _selection.getRangeAt(0);
-    var node = range.startContainer;
+    var node = range.endContainer;
     var targetNode = null;
     while(node.parentNode !== _articleContent){
       if(node.parentNode.getAttribute("data-splitable") == "true"){
@@ -236,12 +227,11 @@
 
   function merge(insertedNode, mergeCompleteFunc){
     var range;
-    if(_selection.rangeCount !== 0)
-      range = _selection.getRangeAt(0);
-
     // keep track of the original selection information.
     var startContainer, endContainer, startOffset, endOffset;
-    if(range){
+    if(_selection.rangeCount !== 0){
+      range = _selection.getRangeAt(0);
+
       startContainer = range.startContainer;
       endContainer = range.endContainer;
       startOffset = range.startOffset;
@@ -253,6 +243,20 @@
       var latterSplitedNode = insertedNode.nextSibling.firstChild;
       // Merge the splited nodes if they exist.
       if(formerSplitedNode.getAttribute("data-split-id") == latterSplitedNode.getAttribute("data-split-id")){
+        // update the range selected nodes and offset
+        if(formerSplitedNode.lastChild.nodeType == latterSplitedNode.firstChild.nodeType){
+          if(startContainer == latterSplitedNode.firstChild){
+            console.log("update startContainer");
+            startContainer = formerSplitedNode.lastChild;
+            startOffset += formerSplitedNode.lastChild.length;
+          }
+          if(endContainer == latterSplitedNode.firstChild){
+            console.log("update endContainer");
+            endContainer = formerSplitedNode.lastChild;
+            endOffset += formerSplitedNode.lastChild.length;
+          }
+        }
+
         // merge the two splited nodes
         while(latterSplitedNode.firstChild){
           formerSplitedNode.appendChild(latterSplitedNode.firstChild);
@@ -260,9 +264,8 @@
         // remove the latter node from its container.
         latterSplitedNode.parentNode.removeChild(latterSplitedNode);
 
-        // TODO: NORMALIZE must be performed!
         // normalize the merged node, remove adjacent text nodes and emtpy node(empty node should not happen)
-        // formerSplitedNode.normalize();
+        formerSplitedNode.normalize();
       }
 
       // append the following nodes into the node preceding the inserted node
@@ -276,21 +279,12 @@
 
     _articleContent.removeChild(insertedNode);
 
-    // TODO: reset original selection needs more work
     // reset to original selection
-    // if(range){
-    //   _selection.removeAllRanges();
-    //   range.setStart(startContainer, startOffset);
-    //   range.setEnd(endContainer, endOffset);
-    //   _selection.addRange(range);
-    // }
     if(range){
-      if(formerSplitedNode.contains(range.startContainer)){
-
-      }
-      if(formerSplitedNode.contains(range.endContainer)){
-
-      }
+      _selection.removeAllRanges();
+      range.setStart(startContainer, startOffset);
+      range.setEnd(endContainer, endOffset);
+      _selection.addRange(range);
     }
 
     if(mergeCompleteFunc)

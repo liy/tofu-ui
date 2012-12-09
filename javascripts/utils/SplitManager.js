@@ -19,6 +19,13 @@
 
   var _animateInsertFunc = null;
 
+  // var iframe = '<iframe class="inserted-iframe" src="iframe.html" frameBorder="0" style="width: 100%"></iframe>'
+  // var iframe = document.createElement("iframe");
+  // iframe.frameBorder = 0;
+  // iframe.setAttribute("class", "inserted-iframe");
+  // iframe.setAttribute("src", "iframe.html");
+  // iframe.setAttribute("style", "width: 100%; height: 6px");
+
   function SplitManager(){
 
   }
@@ -49,7 +56,7 @@
   */
   p.insert = function(content){
     // content = '<div class="inserted-content"><h1><ruby>汉<rt>hàn</rt>字<rt>zì</rt></ruby></h1><p>The idea with collections was that they gave people a context into which to publish their ideas. Optionally, the context could be shared, so that lots of people could contribute. But how do you decide what one collection your idea should be in—and how do you decide exactly the right way to frame the context?</p><p>根据以英语作为母语的人数计算，英语是世界上最广泛的第二语言，也是欧盟，诸多国际组织和很多英联邦国家的官方语言之一。但仅拥有世界第三位的母语使用者，少于汉语和西班牙语[1]。上两个世纪英国和美国在文化、经济、军事、政治和科学上的领先地位使得英语成为一种国际语言。英语也是与计算机联系最密切的语言，大多数编程语言都与英语有联系，而且随着互联网的使用，使英文的使用更普及。英语是联合国的工作语言之一。</p></div>';
-    content = '<iframe class="inserted-iframe" src="iframe.html" frameBorder="0" style="width: 100%"></iframe>';
+    // content = '<iframe class="inserted-iframe" src="iframe.html" frameBorder="0" style="width: 100%"></iframe>';
     if(_animateInsertFunc)
       _animateInsertFunc(content);
   };
@@ -221,14 +228,25 @@
 
     // insert function closure, add the insert content.
     _animateInsertFunc = function(content){
-      insertedNode.innerHTML = content;
-      // animation the split operation
-      var insertedHeight = insertedNode.offsetHeight;
-      insertedNode.style.height = "0px";
-      insertedNode.style.opacity = 0;
-      var tl = new TimelineLite();
-      tl.to(insertedNode, 0.15, {css:{height: insertedHeight, autoAlpha:1}, ease:Quad.easeOut});
-      tl.to(insertedNode, 0.1, {css:{autoAlpha: 1}, ease:Quad.easeOut});
+      // insertedNode.innerHTML = content;
+      // insertedNode.appendChild(iframe);
+      var stripe = new Stripe();
+      stripe.init('iframe.html');
+      // wait until the iframe is loaded
+      stripe.onload = function(){
+        // show the iframe
+        stripe.iframe.style.display = 'block';
+        // animation the split operation
+        var insertedHeight = stripe.height;
+        insertedNode.style.height = "0px";
+        insertedNode.style.opacity = 0;
+        // var tl = new TimelineLite();
+        TweenLite.to(insertedNode, 0.15, {css:{height: insertedHeight, autoAlpha:1}, ease:Quad.easeOut});
+        // tl.to(insertedNode, 1.1, {css:{autoAlpha: 1}, ease:Quad.easeOut});
+      };
+      // hide the iframe before it is loaded
+      stripe.iframe.style.display = 'none';
+      insertedNode.appendChild(stripe.iframe);
     };
 
     SplitManager.instance.insert();

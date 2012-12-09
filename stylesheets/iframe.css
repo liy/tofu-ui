@@ -1,4 +1,36 @@
+a {
+  text-decoration: none;
+  color: #A00000;
+}
+
+a:hover{
+  text-decoration: underline;
+}
+
+h1 {
+  margin: 0;
+  padding-top: 1em;
+}
+
+p {
+  margin: 0;
+  line-height: 1.9em;
+  margin-top: 1.6em;
+}
+
+::selection {
+  background: rgba(0, 0, 0, 0.1); /* Safari */
+}
+
+::-moz-selection {
+  background: rgba(0, 0, 0, 0.1); /* Firefox */
+}
+
 .inserted-content {
+  font-family: Georgia, "STHeiti", "Microsoft YaHei", "Times New Roman", Times, serif;
+  font-size: 14px;
+  color: #525252;
+
   width: 630px;
   margin: 0 auto;
   padding: 1.6em;

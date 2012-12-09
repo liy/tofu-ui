@@ -231,7 +231,11 @@
       // insertedNode.innerHTML = content;
       // insertedNode.appendChild(iframe);
       var stripe = new Stripe();
-      stripe.init('iframe.html');
+      var ran = Math.ceil(Math.random()*1000);
+      if(Math.random()<0.5)
+        stripe.init('stripe_content.html?'+ran);
+      else
+        stripe.init('stripe_menu.html?'+ran);
       // wait until the iframe is loaded
       stripe.onload = function(){
         // show the iframe

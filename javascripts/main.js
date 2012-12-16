@@ -10,4 +10,8 @@ var _ranger = new LineRanger();
 var _splitManager = SplitManager.getInstance();
 _splitManager.init(_ranger);
 
+var papers = document.getElementsByClassName("paper");
+
+var obj = JSONSerialzer.serialize(papers[0]);
+console.dir(obj);
 };

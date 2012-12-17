@@ -12,6 +12,8 @@ _splitManager.init(_ranger);
 
 var papers = document.getElementsByClassName("paper");
 
-var obj = JSONSerialzer.serialize(papers[0]);
+var serializer = new JSONSerializer();
+serializer.init();
+var obj = serializer.serialize(papers[0]);
 console.dir(obj);
 };

@@ -1,4 +1,91 @@
 (function(window){
+  function JSONSerializer(){
+
+  }
+  var p = JSONSerializer.prototype;
+
+  p.init = function(){
+    this.converters = {
+      // link node process
+      A: function(node, obj, style){
+        var container = Object.create(null);
+        if(node.childNodes.length !== 0)
+          container.nodes = [];
+        container.nodeName = node.nodeName;
+        // set the attribute of the container node.
+        container.attributes = Object.create(null);
+        for(i=0; i<node.attributes.length; ++i){
+          container.attributes[node.attributes[i].name] = node.attributes[i].value;
+        }
+
+        obj.nodes.push(container);
+
+        return container;
+      }
+    };
+
+    this.styles = {B: 1, EM: 2, I: 4, SMALL: 8, STRONG: 16};
+  };
+
+  p.serialize = function(rootNode){
+    var article = {};
+    article.nodes = [];
+
+    this.traverse(rootNode, article, 0);
+
+    return article;
+  };
+
+  p.traverse = function(node, obj, style){
+    var i;
+
+    if(this.converters[node.nodeName]){
+      obj = this.converters[node.nodeName](node, obj, style);
+    }
+    else{
+      // if current node is text node, or it has no chiild node(img node)
+      if(node.nodeName === "#text" && node.textContent.replace(/ /g, "") !== ""){
+        // if the text node is empty, ignore it
+        var leaf = Object.create(null);
+        leaf.nodeName = node.nodeName;
+        leaf.text = Object.create(null);
+        leaf.text.data = node.textContent;
+        if(style !== 0) leaf.text.style = style;
+
+        obj.nodes.push(leaf);
+      }
+    }
+
+    // keep traversing the nodes left.
+    for(i=0; i<node.childNodes.length; ++i){
+      var nextNode = node.childNodes[i];
+      // update style
+      style |= this.styles[nextNode.nodeName];
+      this.traverse(nextNode, obj, style);
+    }
+  };
+
+  window.JSONSerializer = JSONSerializer;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
 
 var BOLD = 1;
 var EMPHASIZED = 2;
@@ -7,10 +94,19 @@ var SMALL = 8;
 var STRONG = 16;
 
 function serialize(rootNode){
-    var article = Object.create(null);
+    var article = {};
     article.nodes = [];
 
     traverse(rootNode, article, 0);
+
+    return article;
+}
+
+function genericSerialize(rootNode){
+    var article = Object.create(null);
+    article.nodes = [];
+
+    genericTraverse(rootNode, article, 0);
 
     return article;
 }
@@ -35,6 +131,45 @@ function updateFormat(node, format){
   }
   // console.dir(format);
   return format;
+}
+
+function genericTraverse(node, obj, format){
+  var i;
+
+  // if the node has any attribute, a container node will be created.
+  if(node.attributes && node.attributes.length !== 0){
+    var container = Object.create(null);
+    if(node.childNodes.length !== 0)
+      container.nodes = [];
+    container.nodeName = node.nodeName;
+    // set the attribute of the container node.
+    container.attributes = Object.create(null);
+    for(i=0; i<node.attributes.length; ++i){
+      container.attributes[node.attributes[i].name] = node.attributes[i].value;
+    }
+
+    obj.nodes.push(container);
+    obj = container;
+  }
+  // leaf node, usually a text node or empty element node like img.
+  else if(node.childNodes.length === 0){
+    var leaf = Object.create(null);
+
+    // if the text node is empty, ignore it
+    if(node.textContent.replace(/ /g, "") !== ""){
+      leaf.text = Object.create(null);
+      leaf.text.data = node.textContent;
+      if(format !== 0) leaf.text.format = format;
+
+      obj.nodes.push(leaf);
+    }
+  }
+
+  // keep traversing the nodes left.
+  for(i=0; i<node.childNodes.length; ++i){
+    var nextNode = node.childNodes[i];
+    traverse(nextNode, obj, updateFormat(nextNode, format));
+  }
 }
 
 function traverse(node, obj, format){
@@ -67,7 +202,6 @@ function traverse(node, obj, format){
         if(format !== 0) leaf.text.format = format;
       }
 
-      // console.dir(node);
       if(node.attributes !== null){
         leaf.attributes = Object.create(null);
         for(i=0; i<node.attributes.length; ++i){
@@ -89,44 +223,9 @@ function traverse(node, obj, format){
   }
 }
 
-// function traverse(node, obj, format){
-//   var i;
-
-//   // if current node is text node, or it has no chiild node(img node)
-//   if(node.childNodes.length === 0){
-//     var leaf = Object.create(null);
-
-//     if(node.textContent.replace(/ /g, "") !== ""){
-//       leaf.text = Object.create(null);
-//       leaf.text.data = node.textContent;
-//       if(format !== 0) leaf.text.format = format;
-//     }
-
-//     // console.dir(node);
-//     if(node.attributes !== null){
-//       leaf.attributes = Object.create(null);
-//       for(i=0; i<node.attributes.length; ++i){
-//         leaf.attributes[node.attributes[i].name] = node.attributes[i].value;
-//       }
-//     }
-
-//     if(leaf.text || leaf.attributes){
-//       leaf.nodeName = node.nodeName;
-//       obj.nodes.push(leaf);
-//     }
-
-//     // console.log(leaf.text);
-//   }
-
-//   // keep traversing the nodes left.
-//   for(i=0; i<node.childNodes.length; ++i){
-//     var nextNode = node.childNodes[i];
-//     traverse(nextNode, obj, updateFormat(nextNode, format));
-//   }
-// }
-
 window.JSONSerialzer = {
   serialize: serialize
 };
+*/
 
 })(window);

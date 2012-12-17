@@ -6,22 +6,9 @@
 
   p.init = function(){
     this.converters = {
-      // link node process
-      A: function(node, obj, style){
-        var container = Object.create(null);
-        if(node.childNodes.length !== 0)
-          container.nodes = [];
-        container.nodeName = node.nodeName;
-        // set the attribute of the container node.
-        container.attributes = Object.create(null);
-        for(i=0; i<node.attributes.length; ++i){
-          container.attributes[node.attributes[i].name] = node.attributes[i].value;
-        }
-
-        obj.nodes.push(container);
-
-        return container;
-      }
+      // link and image node process
+      A: attributesNodeConverter,
+      IMG: attributesNodeConverter
     };
 
     this.styles = {B: 1, EM: 2, I: 4, SMALL: 8, STRONG: 16};
@@ -64,6 +51,22 @@
       this.traverse(nextNode, obj, style);
     }
   };
+
+  function attributesNodeConverter(node, obj, style){
+    var container = Object.create(null);
+    if(node.childNodes.length !== 0)
+      container.nodes = [];
+    container.nodeName = node.nodeName;
+    // set the attribute of the container node.
+    container.attributes = Object.create(null);
+    for(i=0; i<node.attributes.length; ++i){
+      container.attributes[node.attributes[i].name] = node.attributes[i].value;
+    }
+
+    obj.nodes.push(container);
+
+    return container;
+  }
 
   window.JSONSerializer = JSONSerializer;
 

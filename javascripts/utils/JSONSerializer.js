@@ -15,7 +15,7 @@
   };
 
   p.serialize = function(rootNode){
-    var article = {};
+    var article = Object.create(null);
     article.nodes = [];
 
     this.traverse(rootNode, article, 0);
@@ -23,11 +23,11 @@
     return article;
   };
 
-  p.traverse = function(node, obj, style){
+  p.traverse = function(node, obj, styles){
     var i;
 
     if(this.converters[node.nodeName]){
-      obj = this.converters[node.nodeName](node, obj, style);
+      obj = this.converters[node.nodeName](node, obj, styles);
     }
     else{
       // if current node is text node, or it has no chiild node(img node)
@@ -37,7 +37,7 @@
         leaf.nodeName = node.nodeName;
         leaf.text = Object.create(null);
         leaf.text.data = node.textContent;
-        if(style !== 0) leaf.text.style = style;
+        if(styles !== 0) leaf.text.styles = styles;
 
         obj.nodes.push(leaf);
       }
@@ -46,13 +46,13 @@
     // keep traversing the nodes left.
     for(i=0; i<node.childNodes.length; ++i){
       var nextNode = node.childNodes[i];
-      // update style
-      style |= this.styles[nextNode.nodeName];
-      this.traverse(nextNode, obj, style);
+      // update styles
+      styles |= this.styles[nextNode.nodeName];
+      this.traverse(nextNode, obj, styles);
     }
   };
 
-  function attributesNodeConverter(node, obj, style){
+  function attributesNodeConverter(node, obj, styles){
     var container = Object.create(null);
     if(node.childNodes.length !== 0)
       container.nodes = [];

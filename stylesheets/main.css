@@ -1,0 +1,73 @@
+body {
+  margin: 0;
+
+  font-family: Georgia, "STHeiti", "Microsoft YaHei", "Times New Roman", Times, serif;
+  font-size: 20px;
+  color: #333;
+
+  background-color: #F9F9F9;
+  background-image:url('../bg.png');
+
+}
+
+a {
+  text-decoration: none;
+  color: #A00000;
+}
+
+a:hover{
+  text-decoration: underline;
+}
+
+h1 {
+  margin: 0;
+  padding-top: 1em;
+}
+
+p {
+  margin: 0;
+  line-height: 1.9em;
+  margin-top: 1.6em;
+}
+
+::selection {
+  background: rgba(0, 0, 0, 0.1); /* Safari */
+}
+
+::-moz-selection {
+  background: rgba(0, 0, 0, 0.1); /* Firefox */
+}
+
+.paper {
+  width: 680px;
+  margin: 0 auto;
+  padding: 0 1.5em;
+
+  -webkit-box-sizing: border-box;
+     -moz-box-sizing: border-box;
+          box-sizing: border-box;
+
+  border-left: 1pt solid #E6E6E6;
+  border-right: 1pt solid #E6E6E6;
+  /*border-bottom: 1pt solid #E6E6E6;*/
+  border-top: 1pt solid #FFF;
+
+  background-color: #FCFCFC;
+
+  -moz-box-shadow:    0 0 10px rgba(0, 0, 0, 0.1);
+  -webkit-box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  box-shadow:         0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.paper:focus{
+  /* disable the focus outline */
+  outline: none;
+}
+
+.paper p:first-child {
+  margin-top: 0;
+}
+
+.inserted {
+  margin: 0 auto;
+}
